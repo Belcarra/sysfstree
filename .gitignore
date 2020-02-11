@@ -1,0 +1,9 @@
+*.pyc
+/dist
+/build
+*.egg-info
+*.pyc
+*.pyo
+*.idea
+dist
+MANIFEST
