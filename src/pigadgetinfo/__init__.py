@@ -22,7 +22,7 @@ import struct
 
 class PiGadgetInfo(object):
 
-	# match_include 
+	# match_include
 	# Return True if matches and name in matches
 	#
 	def match_exclude(self, name, matches):
@@ -33,8 +33,8 @@ class PiGadgetInfo(object):
 		if type(matches) is str:
 			return fnmatch.fnmatch(name, matches)
 		return False
-			
-	# match_include 
+
+	# match_include
 	# Return True if matches is None or if name in matches
 	#
 	def match_include(self, name, matches):
@@ -88,7 +88,7 @@ class PiGadgetInfo(object):
 				#	else:
 				#		print("sub_path: %s in ixf: %s" % (sub_path, self.ixf))
 				#else:
-				#	# self.ixf empty 
+				#	# self.ixf empty
 				#	pass
 
 				output_buf.append("%s%s[%s]" % (prefix, idc, sub_path))
@@ -101,11 +101,11 @@ class PiGadgetInfo(object):
 			elif os.path.isfile(full_path):
 				data = self.pathread(full_path)
 
-				# some sysfs files contain non text data, specifically we see a descriptors file that contain an 
+				# some sysfs files contain non text data, specifically we see a descriptors file that contain an
 				# exact copy of a devices configuration descriptor
 				#
 				if data != "[UnicodeDecodeError]" or sub_path != "descriptors":
-					
+
 					# we have a valid string or binary data not descriptors
 					# XXX should do something for binary not descriptors
 					output_buf.append("%s%s%s: %s" % (prefix, idc, sub_path, data))
@@ -202,7 +202,7 @@ class PiGadgetInfo(object):
 				of.write(output_str)
 		return output_str
 
-if __name__ == "__main__":
+def main():
 	parser = argparse.ArgumentParser(
 		description="Display information about Gadget USB from SysFS and ConfigFS",
 		formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=999))
@@ -270,8 +270,10 @@ if __name__ == "__main__":
 		dirs = [ "usb_f_*" ]
 		print(PiGadgetInfo().make(path, dirs, args))
 
-#- /sys/module/usbf_f*
+	#- /sys/module/usbf_f*
 
 	for path in args.paths:
 		print(PiGadgetInfo().make(path, [], args))
 
+if __name__ == "__main__":
+	main()

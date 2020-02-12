@@ -17,7 +17,7 @@ def main():
         keywords=['configfs','sysfs', 'pi', 'usb', 'gadget'],
         description='pigadgetinfo displayes gadget usb information from the ConfigFS and SysFS',
         entry_points={ 'console_scripts': [ 'pigadgetinfo = pigadgetinfo:main', ], },
-        install_requires=["argparse", "time", "fnmatch", "magic"],
+        install_requires=["argparse", "python_magic"],
         classifiers=[
             "Programming Language :: Python",
             "Development Status :: 3 - Alpha",
@@ -33,6 +33,7 @@ def main():
             "Topic :: System :: System Shells",
             "Topic :: System :: Systems Administration",
         ],
+
         long_description=open('README.md').read(),
     )
 
