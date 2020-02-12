@@ -14,9 +14,10 @@ def main():
         url='http://github.com/stuartlynne/pigadgetinfo',
         download_url='http://github.com/stuartlynne/pigadgetinfo.git',
         license='MIT',
-        keywords=['tail', 'pi', 'usb', 'gadget'],
+        keywords=['configfs','sysfs', 'pi', 'usb', 'gadget'],
         description='pigadgetinfo displayes gadget usb information from the ConfigFS and SysFS',
         entry_points={ 'console_scripts': [ 'pigadgetinfo = pigadgetinfo:main', ], },
+        install_requires=["argparse", "time", "fnmatch", "magic"],
         classifiers=[
             "Programming Language :: Python",
             "Development Status :: 3 - Alpha",
