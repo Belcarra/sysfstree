@@ -20,7 +20,7 @@ import magic
 import struct
 
 
-class PiGadgetInfo(object):
+class SysFSTree(object):
 
 	# match_include
 	# Return True if matches and name in matches
@@ -38,6 +38,7 @@ class PiGadgetInfo(object):
 	# Return True if matches is None or if name in matches
 	#
 	def match_include(self, name, matches):
+		print("match_include: %s in %s" % (name, matches))
 		if len(matches) == 0:
 			return True
 		if type(matches) is list:
@@ -51,6 +52,7 @@ class PiGadgetInfo(object):
 	#
 	def _recurse(self, parent_path, file_list, prefix, output_buf, level):
 		#print("\"%s\" %s" % (prefix, parent_path))
+		print("dirs: %s" % (self.dirs))
 
 		if len(file_list) == 0 or (self.max_level != -1 and self.max_level <= level):
 			return
@@ -202,16 +204,23 @@ class PiGadgetInfo(object):
 				of.write(output_str)
 		return output_str
 
+def test(args):
+	
+	print(SysFSTree().make("/sys/kernel/config/usb_gadget", [], args))
+	
+
 def main():
 	parser = argparse.ArgumentParser(
 		description="Display information about Gadget USB from SysFS and ConfigFS",
 		formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=999))
 
-	#parser.add_argument("-P", "--pattern", nargs='*', help="shell pattern match", default=[])
+	parser.add_argument("-P", "--pattern", nargs='*', help="shell pattern match", default=[])
 
-	#parser.add_argument("-if", "--include_folder", nargs='*', help="include folder", default=[])
+	parser.add_argument("-if", "--include_folder", nargs='*', help="include folder", default=[])
 	#parser.add_argument("-xf", "--exclude_folder", nargs='*', help="exclude folder", default=[])
 	#parser.add_argument("-xn", "--exclude_name", nargs='*', help="exclude name", default=[])
+	parser.add_argument("--test", help=argparse.SUPPRESS, action='store_true')
+
 
 	config = parser.add_argument_group('Gadget Configuration')
 	config.add_argument("--usb-gadget", "--gadget", help="/sys/kernel/config/usb_gadget", action='store_true')
@@ -235,45 +244,50 @@ def main():
 	misc.add_argument("-o", "--output", help="output file name", default="")
 	misc.add_argument("-m", "--max_level", help="max level", type=int, default=-1)
 
-	parser.add_argument("paths", metavar='Path', type=str, nargs="*", help="pathname", default=[])
+	#parser.add_argument("paths", metavar='Path', type=str, nargs="*", help="pathname", default=[])
+	parser.add_argument("paths", metavar='Path', type=str, nargs=argparse.REMAINDER, help="pathname", default=[])
 
 
 	args = parser.parse_args()
-	#print("args: %s" % (args))
+	print("args: %s" % (args))
+
+	if args.test:
+		test(args)
+		
 
 	if args.usb_gadget:
-		print(PiGadgetInfo().make("/sys/kernel/config/usb_gadget", [], args))
+		print(SysFSTree().make("/sys/kernel/config/usb_gadget", [], args))
 
 	if args.udc:
-		print(PiGadgetInfo().make("/sys/class/udc", [], args))
+		print(SysFSTree().make("/sys/class/udc", [], args))
 
 	if args.udc or args.soc_udc:
 		dirs = ["*.usb", ["udc"]]
-		print(PiGadgetInfo().make("/sys/devices/platform/soc", dirs, args))
+		print(SysFSTree().make("/sys/devices/platform/soc", dirs, args))
 
 	if args.soc_gadget:
 		dirs = ["*.usb", ["gadget"]]
-		print(PiGadgetInfo().make("/sys/devices/platform/soc", dirs, args))
+		print(SysFSTree().make("/sys/devices/platform/soc", dirs, args))
 
 	if args.soc_usb3:
 		dirs = ["*.usb", ["usb3", "gadget"]]
-		print(PiGadgetInfo().make("/sys/devices/platform/soc", dirs, args))
+		print(SysFSTree().make("/sys/devices/platform/soc", dirs, args))
 
 
 	if args.modules:
 		dirs = [["usb_f_*", "dwc2", "dwc_otg", "libcomposite", "udc_core", "usbcore"], ["holders", "initstate"]]
-		print(PiGadgetInfo().make("/sys/module", dirs, args))
+		print(SysFSTree().make("/sys/module", dirs, args))
 
 	if args.usb_f:
 		(sysname, nodename, release, version, machine) = os.uname()
 		path = "/lib/modules/" + release + "/kernel/drivers/usb/gadget/function/"
 		dirs = [ "usb_f_*" ]
-		print(PiGadgetInfo().make(path, dirs, args))
+		print(SysFSTree().make(path, dirs, args))
 
 	#- /sys/module/usbf_f*
 
 	for path in args.paths:
-		print(PiGadgetInfo().make(path, [], args))
+		print(SysFSTree().make(path, [args.pattern], args))
 
 if __name__ == "__main__":
 	main()
