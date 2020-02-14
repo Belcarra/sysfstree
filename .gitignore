@@ -7,3 +7,4 @@
 *.idea
 dist
 MANIFEST
+__pycache__

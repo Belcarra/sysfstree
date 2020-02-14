@@ -5,18 +5,18 @@ from setuptools import setup
 def main():
 
     setup(
-        name='pigadgetinfo',
-        packages=['pigadgetinfo'],
+        name='sysfstree',
+        packages=['sysfstree'],
         package_dir={'': 'src'},
         version=open('VERSION.txt').read().strip(),
         author='Stuart Lynne',
         author_email='stuart.lynne@gmail.com',
-        url='http://github.com/stuartlynne/pigadgetinfo',
-        download_url='http://github.com/stuartlynne/pigadgetinfo.git',
+        url='http://github.com/Belarra/sysfstree',
+        download_url='http://github.com/Belarra/sysfstree.git',
         license='MIT',
-        keywords=['configfs','sysfs', 'pi', 'usb', 'gadget'],
-        description='pigadgetinfo displayes gadget usb information from the ConfigFS and SysFS',
-        entry_points={ 'console_scripts': [ 'pigadgetinfo = pigadgetinfo:main', ], },
+        keywords=['configfs', 'sysfs', 'pi', 'usb', 'gadget'],
+        description='sysfstree displayes gadget usb information from the ConfigFS and SysFS',
+        entry_points={'console_scripts': ['sysfstree = sysfstree:main', ], },
         install_requires=["argparse", "python_magic"],
         classifiers=[
             "Programming Language :: Python",

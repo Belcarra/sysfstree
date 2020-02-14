@@ -19,3 +19,31 @@ install:
 	python3 setup.py $@
 twine:
 	twine upload dist/*
+
+flake8a:
+	flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+flake8b:
+	flake8 . --ignore=C901,E117,W191,E128 --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+doctesta:
+	python3 -m doctest src/pigadgetinfo/__init__.py -v
+doctestb:
+	python3 -m doctest src/pigadgetinfo/sysfstree.py -v
+
+
+gadget_modules.tgz:
+	cd /; tar cvfz /tmp/$@ \
+		lib/modules/4.19.97-v7l+/kernel/drivers/usb/gadget/function/u_serial.ko \
+		lib/modules/4.19.97-v7l+/kernel/drivers/usb/gadget/function/u_ether.ko \
+		lib/modules/4.19.97-v7l+/kernel/drivers/usb/gadget/function/usb_f_acm.ko \
+		lib/modules/4.19.97-v7l+/kernel/drivers/usb/gadget/function/usb_f_ecm.ko \
+		lib/modules/4.19.97-v7l+/kernel/drivers/usb/dwc2 \
+		lib/modules/4.19.97-v7l+/kernel/drivers/usb/mon 
+		mv /tmp/$@ .
+
+sysfs.tgz:
+	cd /; tar cvfz /tmp/$@ \
+		mv /tmp/$@ .
+
+
