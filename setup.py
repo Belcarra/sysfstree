@@ -1,5 +1,5 @@
 
-from setuptools import setup
+from setuptools import setup, Extension
 
 
 def main():
@@ -33,8 +33,9 @@ def main():
             "Topic :: System :: System Shells",
             "Topic :: System :: Systems Administration",
         ],
-
         long_description=open('README.md').read(),
+        long_description_content_type='text/markdown'
+
     )
 
 

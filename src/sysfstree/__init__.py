@@ -3,7 +3,7 @@
 # Set encoding default for python 2.7
 # vim: syntax=python noexpandtab
 
-# sysfstree implements a recursive generator that will recursively iterate a file system, typically /sys, retrieving
+# sysfstree implements a generator that will recursively iterate a file system, typically /sys, retrieving
 # the contents of the files, and displaying the path names them in a fashion similar to the tree(1) command.
 #
 
@@ -119,26 +119,26 @@ class sysfstree(object):
 			# print("fstat: size:%s" % (fstat.st_size))
 		except (PermissionError):
 			return ''
-
-		# zero size files
-		#if fstat.st_size == 0:
-		#	return ''
-
+		
+		# 4096 or 0 byte files should contain info
 		if fstat.st_size == 4096 or fstat.st_size == 0:
 			try:
 				f = open(path, "r")
-				l = f.readlines(1000)
+				lines = f.readlines(1000)
 				f.close()
-				return l
+				return lines
 			except (PermissionError, OSError):
 				return ''
 			except UnicodeDecodeError:
 				return '[UnicodeDecodeError]'
 
+		# 65553 byte files are USB Descriptors
 		if fstat.st_size == 65553:
 			return self.pathdescriptors(path)
 
-		# unknown
+		# unknown - see if ELF module, this is special case
+		# so we can list modules from /lib/.*/modules/
+		#
 		try:
 			filetype = magic.from_file(path)
 			if "ELF" in filetype:
@@ -146,8 +146,6 @@ class sysfstree(object):
 		except (magic.MagicException, PermissionError):
 			return ''
 		return '<UNKNOWN>'
-
-
 
 	# recurse through the file system displaying information from the files
 	# and symlinks found
@@ -165,8 +163,7 @@ class sysfstree(object):
 		if len(file_list) == 0 or (self.maxlevel != -1 and self.maxlevel <= level):
 			return
 
-		file_list.sort(key=lambda f: os.path.isfile(os.path.join(parent_path, f)))
-		for idx, sub_path in enumerate(file_list):
+		for idx, sub_path in enumerate(sorted(file_list)):
 
 			full_path = os.path.join(parent_path, sub_path)
 
@@ -187,7 +184,7 @@ class sysfstree(object):
 				pass
 
 			# set the tree decoration
-			idc = ("┣━", "┗━")[idx == len(file_list) - 1]
+			idc = ("┣━━", "┗━━")[idx == len(file_list) - 1]
 
 			# for directories yield the directory name and then yield from recursively
 			if os.path.isdir(full_path) and not os.path.islink(full_path):
@@ -207,21 +204,27 @@ class sysfstree(object):
 			elif os.path.isfile(full_path):
 				l = self.pathread(full_path)
 				first = True
-				for d in l:
-					yield ("%s%s%s: %s" % (prefix, idc, sub_path, d.rstrip()))
-					if not first:
-						continue
-					# blank sub_path and change idc
-					sub_path = ' ' * (len(sub_path) + 1)
-					idc = "┃"
-					first = False
+				if len(l) == 0:
+					yield ("%s%s%s: [NULL]" % (prefix, idc, sub_path))
+				else:
+					for d in l:
+						yield ("%s%s%s: %s" % (prefix, idc, sub_path, d.rstrip()))
+						if not first:
+							continue
+						# blank sub_path and change idc
+						sub_path = ' ' * (len(sub_path) + 1)
+						idc = "┃"
+						first = False
 
 
 def _main(paths, maxlevel=-1, include=[], exclude=[]):
 	for p in paths:
 		sysfs = sysfstree(p, maxlevel=maxlevel, include=include, exclude=exclude)
-		for l in sysfs._tree(p, os.listdir(p), "", -1):
-			print("%s" % (l), file=sys.stdout)
+		try:
+			for l in sysfs._tree(p, os.listdir(p), "", -1):
+				print("%s" % (l), file=sys.stdout)
+		except PermissionError:
+			print("[%s] [PermissionError]" % (p))
 
 
 def _test(args):
@@ -253,7 +256,7 @@ def main():
 		description="Display information about Gadget USB from SysFS and ConfigFS",
 		formatter_class=lambda prog: argparse.RawTextHelpFormatter(prog, width=999))
 
-	parser.add_argument("-T", "--test", help="/sys/devices/platform/soc/*.usb/udc", action='store_true')
+	parser.add_argument("-T", "--test", help="run tests", action='store_true')
 	parser.add_argument("-P", "--path", nargs='*', help="include (shell pattern match)", default=[])
 	parser.add_argument("-I", "--include", nargs='*', help="include (shell pattern match)", default=[])
 	parser.add_argument("-E", "--exclude", nargs='*', help="exclude (shell pattern match)", default=[])
@@ -262,7 +265,7 @@ def main():
 
 	args = parser.parse_args()
 
-	print("args: %s" % (args))
+	# print("args: %s" % (args))
 
 	if args.test:
 		_test(args)
