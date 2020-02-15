@@ -119,7 +119,7 @@ class sysfstree(object):
 			# print("fstat: size:%s" % (fstat.st_size))
 		except (PermissionError):
 			return ''
-		
+
 		# 4096 or 0 byte files should contain info
 		if fstat.st_size == 4096 or fstat.st_size == 0:
 			try:
@@ -228,6 +228,7 @@ def _main(paths, maxlevel=-1, include=[], exclude=[]):
 
 
 def _test(args):
+	import magic
 	import doctest
 	doctest.testmod()
 
