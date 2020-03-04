@@ -53,8 +53,8 @@ class sysfstree(object):
 		self.nobold = nobold
 		self.root = root
 
-		#print("sysfstree: maxlevel: %s include: %s exclude: %s bold: %s root: %s" % 
-		#	(self.maxlevel, self.include, self.exclude, self.bold, self.root))
+		# print("sysfstree: maxlevel: %s include: %s exclude: %s bold: %s root: %s" %
+		#       (self.maxlevel, self.include, self.exclude, self.bold, self.root))
 
 	# match_exclude
 	# Return False if matches is None or name not in matches
@@ -90,7 +90,7 @@ class sysfstree(object):
 		except IndexError:
 			return True
 
-		#print("match_include: %s in %s" % (name, matches))
+		# print("match_include: %s in %s" % (name, matches))
 		if len(matches) == 0:
 			return True
 		if type(matches) is list:
@@ -98,7 +98,6 @@ class sysfstree(object):
 		if type(matches) is str:
 			return fnmatch.fnmatch(name, matches)
 		return True
-
 
 	def _colored(self, text, color=None, attrs=None):
 		if self.nobold:
@@ -113,7 +112,7 @@ class sysfstree(object):
 		except IndexError:
 			matches = None
 
-		#print("_color: %s in %s" % (path, matches))
+		# print("_color: %s in %s" % (path, matches))
 
 		if matches is None or len(matches) == 0:
 			pass
@@ -128,7 +127,6 @@ class sysfstree(object):
 			if fnmatch.fnmatch(path, matches):
 				return self._colored(path, 'red', attrs=['bold'])
 		return path
-		
 
 	def pathdescriptors(self, path):
 		try:
@@ -197,7 +195,6 @@ class sysfstree(object):
 			return ''
 		return '<UNKNOWN>'
 
-
 	# recurse through the file system displaying information from the files
 	# and symlinks found
 	#
@@ -227,9 +224,9 @@ class sysfstree(object):
 			# match this path
 			if self.match_exclude(sub_path, level):
 				continue
-			
+
 			# set the tree decoration
-			#idc = ("┣━━", "┗━━")[idx == len(file_list) - 1]
+			# idc = ("┣━━", "┗━━")[idx == len(file_list) - 1]
 			idc = ("├──", "└──")[idx == len(file_list) - 1]
 
 			# for directories yield the directory name and then yield from recursively
@@ -248,13 +245,13 @@ class sysfstree(object):
 			# some interpretation so it will recognize ELF files and USB Descriptors
 			#
 			elif os.path.isfile(full_path):
-				l = self.pathread(full_path)
+				line = self.pathread(full_path)
 				first = True
-				if len(l) == 0:
+				if len(line) == 0:
 					yield ("%s%s%s: [NULL]" % (prefix, idc, self._color(sub_path, level)))
 				else:
 					idc = "├──"
-					for d in l:
+					for d in line:
 						yield ("%s%s%s: %s" % (prefix, idc, self._color(sub_path, level), d.rstrip()))
 						if not first:
 							continue
@@ -265,9 +262,9 @@ class sysfstree(object):
 
 
 def _main(paths, maxlevel=-1, include=[], exclude=[], bold=[], ordinary=False, nobold=False):
-	#print("include: %s" % (include))
-	#print("exclude: %s" % (exclude))
-	#print("bold: %s" % (bold))
+	# print("include: %s" % (include))
+	# print("exclude: %s" % (exclude))
+	# print("bold: %s" % (bold))
 	for p in paths:
 		sysfs = sysfstree(p, maxlevel=maxlevel, include=include, exclude=exclude, bold=bold, ordinary=ordinary, nobold=nobold)
 		try:
@@ -278,7 +275,6 @@ def _main(paths, maxlevel=-1, include=[], exclude=[], bold=[], ordinary=False, n
 
 
 def _test(args):
-	import magic
 	import doctest
 	doctest.testmod()
 
