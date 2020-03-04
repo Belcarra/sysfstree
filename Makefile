@@ -18,7 +18,7 @@ sdist:
 install:
 	python3 setup.py $@
 twine:
-	twine upload dist/*
+	twine upload --verbose dist/*
 
 twine-test:
 	twine check dist/*
