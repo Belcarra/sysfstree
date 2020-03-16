@@ -17,7 +17,7 @@ def main():
         keywords=['configfs', 'sysfs', 'pi', 'usb', 'gadget'],
         description='sysfstree displayes gadget usb information from the ConfigFS and SysFS',
         entry_points={'console_scripts': ['sysfstree = sysfstree:main', ], },
-        install_requires=["argparse", "python-magic"],
+        install_requires=["argparse", "termcolor", "python-magic"],
         classifiers=[
             "Programming Language :: Python",
             "Development Status :: 3 - Alpha",
