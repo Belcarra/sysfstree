@@ -43,7 +43,7 @@ from termcolor import colored
 
 class sysfstree(object):
 
-	def __init__(self, root, maxlevel, include=None, exclude=None, bold=None, ordinary=False, nobold=False):
+	def __init__(self, root, maxlevel, include=None, exclude=None, bold=None, ordinary=False, nobold=False, sort=True):
 
 		self.maxlevel = maxlevel
 		self.include = include
@@ -52,6 +52,7 @@ class sysfstree(object):
 		self.ordinary = ordinary
 		self.nobold = nobold
 		self.root = root
+		self.sort = sort
 
 		# print("sysfstree: maxlevel: %s include: %s exclude: %s bold: %s root: %s" %
 		#       (self.maxlevel, self.include, self.exclude, self.bold, self.root))
@@ -202,6 +203,7 @@ class sysfstree(object):
 
 		# print("\"%s\" %s" % (prefix, parent_path))
 		# print("dirs: %s" % (self.dirs))
+		# print("_tree: file_list: %s" % (file_list))
 
 		if level == -1:
 			yield ("[%s]" % (self._colored(parent_path, attrs=['bold'])))
@@ -211,7 +213,9 @@ class sysfstree(object):
 		if len(file_list) == 0 or (self.maxlevel != -1 and self.maxlevel <= level):
 			return
 
-		for idx, sub_path in enumerate(sorted(file_list, key=str.casefold)):
+		if self.sort:
+			file_list = sorted(file_list, key=str.casefold)
+		for idx, sub_path in enumerate(file_list):
 
 			full_path = os.path.join(parent_path, sub_path)
 
@@ -235,7 +239,10 @@ class sysfstree(object):
 				yield ("%s%s[%s]" % (prefix, idc, self._color(sub_path, level)))
 
 				tmp_prefix = (prefix + "    ", prefix + "│   ")[len(file_list) > 1 and idx != len(file_list) - 1]
-				yield from self._tree(full_path, os.listdir(full_path), tmp_prefix, level + 1)
+				# paths = os.listdir(full_path)
+				paths = [ d.name for d in sorted(os.scandir(full_path), key=lambda dirent: dirent.inode())]
+				yield from self._tree(full_path, paths, tmp_prefix, level + 1)
+				# yield from self._tree(full_path, os.listdir(full_path), tmp_prefix, level + 1)
 
 			# for symlinks yield the real pathname
 			elif os.path.islink(full_path):
@@ -323,7 +330,7 @@ def main():
 
 	args = parser.parse_args()
 
-	print("args: %s" % (args))
+	# print("args: %s" % (args), file=sys.stderr)
 
 	if args.bold and args.bold_list:
 		print("--bold and --bold_list are mutually incompatible, use only one")
