@@ -179,7 +179,18 @@ class sysfstree(object):
 			except (PermissionError, OSError):
 				return ''
 			except UnicodeDecodeError:
-				return '[UnicodeDecodeError]'
+				# print('pathread: [UnicodeDecodeError]', file=sys.stderr)
+				pass
+			try:
+				f = open(path, "rb")
+				bytes = f.read(4096)
+				f.close
+			except (PermissionError, OSError):
+				return ''
+			# print("bytes: %s" % (type(bytes)), file=sys.stderr)
+			# print("bytes: %s" % (bytes), file=sys.stderr)
+			return bytes
+
 
 		# 65553 byte files are USB Descriptors
 		if fstat.st_size == 65553:
@@ -252,28 +263,54 @@ class sysfstree(object):
 			# some interpretation so it will recognize ELF files and USB Descriptors
 			#
 			elif os.path.isfile(full_path):
-				line = self.pathread(full_path)
+				data = self.pathread(full_path)
 				first = True
-				if len(line) == 0:
+				# test for empty file
+				if len(data) == 0:
 					yield ("%s%s%s: [NULL]" % (prefix, idc, self._color(sub_path, level)))
-				else:
-					idc = "├──"
-					for d in line:
-						yield ("%s%s%s: %s" % (prefix, idc, self._color(sub_path, level), d.rstrip()))
+					continue
+
+				idc = "├──"
+				# special case for non-text data
+				if type(data) == bytes:
+					l = ''
+					count = 0
+					total = 0
+					for d in data:
+						l += " %02x" % int(d)
+						total += 1
+						count += 1
+						if count < 16 and total < len(data):
+							continue
+
+						yield ("%s%s%s:%s" % (prefix, idc, self._color(sub_path, level), l))
+						count = 0
+						l = ''
 						if not first:
 							continue
 						# blank sub_path and change idc
 						sub_path = ' ' * (len(sub_path) + 1)
 						idc = "│ "
 						first = False
+					continue
+				# normal text data	
+				for d in data:
+					yield ("%s%s%s: %s" % (prefix, idc, self._color(sub_path, level), d.rstrip()))
+					if not first:
+						continue
+					# blank sub_path and change idc
+					sub_path = ' ' * (len(sub_path) + 1)
+					idc = "│ "
+					first = False
 
 
-def _main(paths, maxlevel=-1, include=[], exclude=[], bold=[], ordinary=False, nobold=False):
+def _main(paths, maxlevel=-1, include=[], exclude=[], bold=[], ordinary=False, nobold=False, sort=True):
 	# print("include: %s" % (include))
 	# print("exclude: %s" % (exclude))
 	# print("bold: %s" % (bold))
 	for p in paths:
-		sysfs = sysfstree(p, maxlevel=maxlevel, include=include, exclude=exclude, bold=bold, ordinary=ordinary, nobold=nobold)
+		sysfs = sysfstree(p, maxlevel=maxlevel, include=include, exclude=exclude, bold=bold, 
+				ordinary=ordinary, nobold=nobold, sort=sort)
 		try:
 			for l in sysfs._tree(p, os.listdir(p), "", -1):
 				print("%s" % (l), file=sys.stdout)
@@ -285,21 +322,23 @@ def _test(args):
 	import doctest
 	doctest.testmod()
 
-	# _main(["/sys/kernel/config/usb_gadget"])
+	_main(["/sys/kernel/config/usb_gadget"], bold=[[],['UDC']], sort=False)
+	
 	# _ main(["/sys/devices/platform/soc"], include=["*.usb"])
 	# _main(["/sys/devices/platform/soc"], maxlevel=args.maxlevel, include=[["*.usb"]], exclude=[[],
 	#  	["usb3", "subsystem", "driver", "power", "gadget", "of_node", "pools", "driver_override", "modalias", "uevent"]])
 
 	# _main(["/sys/devices/platform/soc"], maxlevel=args.maxlevel, include=[["*.usb"], ["udc"]])
 
-	_main(["/sys"], include=[["power"], ["pm_freeze_timeout", "state"]])
-	_main(["/sys/devices/platform/soc"], include=[["*.usb"], ["usb3"], ["descriptors", "ep_00", "driver"]])
+	# _main(["/sys"], include=[["power"], ["pm_freeze_timeout", "state"]])
+	# _main(["/sys/devices/platform/soc"], include=[["*.usb"], ["usb3"], ["descriptors", "ep_00", "driver"]])
 
-	_main(["/sys/kernel/debug/tracing/events/workqueue/workqueue_execute_end"], )
+	# _main(["/sys/kernel/debug/tracing/events/workqueue/workqueue_execute_end"], )
 
-	(sysname, nodename, release, version, machine) = os.uname()
-	path = "/lib/modules/" + release + "/kernel/drivers/usb/gadget/function/"
-	_main([path], maxlevel=args.maxlevel, include=["usb_f_*"])
+	# (sysname, nodename, release, version, machine) = os.uname()
+	# path = "/lib/modules/" + release + "/kernel/drivers/usb/gadget/function/"
+	# _main([path], maxlevel=args.maxlevel, include=["usb_f_*"])
+
 
 
 # this is mainly for testing standalone
