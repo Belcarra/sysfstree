@@ -226,6 +226,79 @@ class sysfstree(object):
 
 		if self.sort:
 			file_list = sorted(file_list, key=str.casefold)
+
+		# first all of the files and symlinks, skip directories
+		for idx, sub_path in enumerate(file_list):
+
+			full_path = os.path.join(parent_path, sub_path)
+
+			# if there is a set of includes for this level ensure that the we match
+			# this path
+			if not self.match_include(sub_path, level):
+				continue
+
+			# if there is a set of excludes for this level ensure that the we do not
+			# match this path
+			if self.match_exclude(sub_path, level):
+				continue
+
+			# set the tree decoration
+			# idc = ("┣━━", "┗━━")[idx == len(file_list) - 1]
+			idc = ("├──", "└──")[idx == len(file_list) - 1]
+
+			# for symlinks yield the real pathname
+			if os.path.islink(full_path):
+				yield ("%s%s%s -> %s" % (prefix, idc, self._color(sub_path, level), os.path.realpath(full_path)))
+				continue
+
+			# files yield as many lines of data as we read from the file, pathread() does
+			# some interpretation so it will recognize ELF files and USB Descriptors
+			#
+			if not os.path.isfile(full_path):
+				continue
+
+			data = self.pathread(full_path)
+			first = True
+			# test for empty file
+			if len(data) == 0:
+				yield ("%s%s%s: [NULL]" % (prefix, idc, self._color(sub_path, level)))
+				continue
+
+			idc = "├──"
+			# special case for non-text data
+			if type(data) == bytes:
+				l = ''
+				count = 0
+				total = 0
+				for d in data:
+					l += " %02x" % int(d)
+					total += 1
+					count += 1
+					if count < 16 and total < len(data):
+						continue
+
+					yield ("%s%s%s:%s" % (prefix, idc, self._color(sub_path, level), l))
+					count = 0
+					l = ''
+					if not first:
+						continue
+					# blank sub_path and change idc
+					sub_path = ' ' * (len(sub_path) + 1)
+					idc = "│ "
+					first = False
+				continue
+
+			# normal text data	
+			for d in data:
+				yield ("%s%s%s: %s" % (prefix, idc, self._color(sub_path, level), d.rstrip()))
+				if not first:
+					continue
+				# blank sub_path and change idc
+				sub_path = ' ' * (len(sub_path) + 1)
+				idc = "│ "
+				first = False
+
+		# do directories
 		for idx, sub_path in enumerate(file_list):
 
 			full_path = os.path.join(parent_path, sub_path)
@@ -255,54 +328,6 @@ class sysfstree(object):
 				yield from self._tree(full_path, paths, tmp_prefix, level + 1)
 				# yield from self._tree(full_path, os.listdir(full_path), tmp_prefix, level + 1)
 
-			# for symlinks yield the real pathname
-			elif os.path.islink(full_path):
-				yield ("%s%s%s -> %s" % (prefix, idc, self._color(sub_path, level), os.path.realpath(full_path)))
-
-			# files yield as many lines of data as we read from the file, pathread() does
-			# some interpretation so it will recognize ELF files and USB Descriptors
-			#
-			elif os.path.isfile(full_path):
-				data = self.pathread(full_path)
-				first = True
-				# test for empty file
-				if len(data) == 0:
-					yield ("%s%s%s: [NULL]" % (prefix, idc, self._color(sub_path, level)))
-					continue
-
-				idc = "├──"
-				# special case for non-text data
-				if type(data) == bytes:
-					l = ''
-					count = 0
-					total = 0
-					for d in data:
-						l += " %02x" % int(d)
-						total += 1
-						count += 1
-						if count < 16 and total < len(data):
-							continue
-
-						yield ("%s%s%s:%s" % (prefix, idc, self._color(sub_path, level), l))
-						count = 0
-						l = ''
-						if not first:
-							continue
-						# blank sub_path and change idc
-						sub_path = ' ' * (len(sub_path) + 1)
-						idc = "│ "
-						first = False
-					continue
-				# normal text data	
-				for d in data:
-					yield ("%s%s%s: %s" % (prefix, idc, self._color(sub_path, level), d.rstrip()))
-					if not first:
-						continue
-					# blank sub_path and change idc
-					sub_path = ' ' * (len(sub_path) + 1)
-					idc = "│ "
-					first = False
-
 
 def _main(paths, maxlevel=-1, include=[], exclude=[], bold=[], ordinary=False, nobold=False, sort=True):
 	# print("include: %s" % (include))
@@ -316,7 +341,6 @@ def _main(paths, maxlevel=-1, include=[], exclude=[], bold=[], ordinary=False, n
 				print("%s" % (l), file=sys.stdout)
 		except PermissionError:
 			print("[%s] [PermissionError]" % (p))
-
 
 def _test(args):
 	import doctest
