@@ -38,12 +38,16 @@ from termcolor import colored
 
 """sysfstree.py: ..."""
 
+# ToDo
+# 1. check for null bytes in osdesc and dev/host addr
+
 # __author__  = "Stuart.Lynne@belcarra.com"
 
 
 class sysfstree(object):
 
-	def __init__(self, root, maxlevel, include=None, exclude=None, bold=None, ordinary=False, nobold=False, sort=True):
+	def __init__(self, root, maxlevel, pinclude=[], pexclude=[], include=None, exclude=None, 
+			bold=None, ordinary=False, nobold=False, sort=True):
 
 		self.maxlevel = maxlevel
 		self.include = include
@@ -54,13 +58,29 @@ class sysfstree(object):
 		self.root = root
 		self.sort = sort
 
+		self.pinclude = [ x.split('/') for x in pinclude]
+		self.pexclude = [ x.split('/') for x in pexclude]
+
+		if len(self.pinclude) > 0 and len(self.include):
+			print('sysfstree: pinclude and include mutually exclusive')
+			exit(1)
+		if len(self.pexclude) > 0 and len(self.exclude):
+			print('sysfstree: pexclude and exclude mutually exclusive')
+			exit(1)
+	    
+		# print("sysfstree: pinclude: %s" % (pinclude), file=sys.stderr)
+		# print("sysfstree: pinclude: %s" % (self.pinclude), file=sys.stderr)
+
 		# print("sysfstree: maxlevel: %s include: %s exclude: %s bold: %s root: %s" %
-		#       (self.maxlevel, self.include, self.exclude, self.bold, self.root))
+		#       (self.maxlevel, self.include, self.exclude, self.bold, self.root), file=sys.stderr)
 
 	# match_exclude
 	# Return False if matches is None or name not in matches
 	#
 	def match_exclude(self, name, level):
+
+		if len(self.pexclude) > 0:
+			return False
 
 		if self.exclude is None:
 			return False
@@ -69,14 +89,15 @@ class sysfstree(object):
 		except IndexError:
 			return False
 
+		print("match_exclude: %s in %s" % (name, matches), file=sys.stderr)
 		if len(matches) == 0:
-			# print("match_exclude: %s in %s len(matches) == 0" % (name, matches))
+			# print("match_exclude: %s in %s len(matches) == 0" % (name, matches), file=sys.stderr)
 			return False
 		if type(matches) is list:
-			# print("match_exclude: %s in %s list" % (name, matches))
+			# print("match_exclude: %s in %s list" % (name, matches), file=sys.stderr)
 			return any(fnmatch.fnmatch(name, pattern) for pattern in matches)
 		if type(matches) is str:
-			# print("match_exclude: %s in %s str" % (name, matches))
+			# print("match_exclude: %s in %s str" % (name, matches), file=sys.stderr)
 			return fnmatch.fnmatch(name, matches)
 		return False
 
@@ -84,6 +105,11 @@ class sysfstree(object):
 	# Return True if matches is None or if name in matches
 	#
 	def match_include(self, name, level):
+
+		if len(self.pinclude) > 0:
+			return False
+
+		# print('match_include: %s' % (name), file=sys.stderr)
 		if self.include is None:
 			return True
 		try:
@@ -91,14 +117,63 @@ class sysfstree(object):
 		except IndexError:
 			return True
 
-		# print("match_include: %s in %s" % (name, matches))
+		# print("match_include: %s in %s" % (name, matches), file=sys.stderr)
 		if len(matches) == 0:
+			# print("match_include: len 0")
 			return True
 		if type(matches) is list:
+			# print("match_include: match list")
 			return any(fnmatch.fnmatch(name, pattern) for pattern in matches)
 		if type(matches) is str:
+			# print("match_include: match str")
 			return fnmatch.fnmatch(name, matches)
 		return True
+
+	# match_pexclude
+	# Return False if matches is None or name not in matches
+	#
+	def match_pexclude(self, path, name, level):
+
+		if len(self.exclude) > 0:
+			return False
+
+		file = path[len(self.root)+1:]
+		if self.pexclude is None:
+			return False
+
+		for match in self.pinclude:
+			try:
+				# print("match_pinclude: %s:%s:%s" % (name, match, match[level]), file=sys.stderr)
+				if fnmatch.fnmatch(name, match[level]):
+					# print("match_pinclude: MATCH %s %s" % (name, match), file=sys.stderr)
+					return False
+			except (IndexError):
+				pass
+		return False
+
+	# match_pinclude
+	# Return True if matches is None or if name in matches
+	#
+	def match_pinclude(self, path, name, level):
+
+		if len(self.include) > 0:
+			return False
+
+		file = path[len(self.root)+1:]
+		if self.pinclude is None:
+			return True
+
+		for match in self.pinclude:
+			try:
+				# print("match_pinclude: %s:%s:%s" % (name, match, match[level]), file=sys.stderr)
+				if fnmatch.fnmatch(name, match[level]):
+					# print("match_pinclude: MATCH %s %s" % (name, match), file=sys.stderr)
+					return True
+			except (IndexError):
+				pass
+		# print("match_pinclude: NO MATCH %s" % (name), file=sys.stderr)
+		return False
+
 
 	def _colored(self, text, color=None, attrs=None):
 		if self.nobold:
@@ -113,18 +188,18 @@ class sysfstree(object):
 		except IndexError:
 			matches = None
 
-		# print("_color: %s in %s" % (path, matches))
+		# print("_color: %s in %s" % (path, matches), file=sys.stderr)
 
 		if matches is None or len(matches) == 0:
 			pass
 
 		elif type(matches) is list:
-			# print("color: %s in %s list" % (path, matches))
+			# print("color: %s in %s list" % (path, matches), file=sys.stderr)
 			if any(fnmatch.fnmatch(path, pattern) for pattern in matches):
 				return self._colored(path, 'red', attrs=['bold'])
 
 		elif type(matches) is str:
-			# print("color: %s in %s str" % (name, matches))
+			# print("color: %s in %s str" % (name, matches), file=sys.stderr)
 			if fnmatch.fnmatch(path, matches):
 				return self._colored(path, 'red', attrs=['bold'])
 		return path
@@ -165,7 +240,7 @@ class sysfstree(object):
 
 		try:
 			fstat = os.stat(path)
-			# print("fstat: size:%s" % (fstat.st_size))
+			# print("fstat: size:%s" % (fstat.st_size), file=sys.stderr)
 		except (PermissionError):
 			return ''
 
@@ -212,10 +287,6 @@ class sysfstree(object):
 	#
 	def _tree(self, parent_path, file_list, prefix, level):
 
-		# print("\"%s\" %s" % (prefix, parent_path))
-		# print("dirs: %s" % (self.dirs))
-		# print("_tree: file_list: %s" % (file_list))
-
 		if level == -1:
 			yield ("[%s]" % (self._colored(parent_path, attrs=['bold'])))
 			yield from self._tree(parent_path, file_list, prefix, 0)
@@ -234,12 +305,14 @@ class sysfstree(object):
 
 			# if there is a set of includes for this level ensure that the we match
 			# this path
-			if not self.match_include(sub_path, level):
+			if not (self.match_pinclude(full_path, sub_path, level) or self.match_include(sub_path, level)):
+				# print('%s FILE DID NOT MATCH INCLUDE' % (sub_path), file=sys.stderr)
 				continue
 
 			# if there is a set of excludes for this level ensure that the we do not
 			# match this path
-			if self.match_exclude(sub_path, level):
+			if self.match_exclude(sub_path, level) or self.match_pexclude(full_path, sub_path, level):
+				# print('%s FILE DID MATCH EXCLUDE' % (sub_path), file=sys.stderr)
 				continue
 
 			# set the tree decoration
@@ -305,12 +378,14 @@ class sysfstree(object):
 
 			# if there is a set of includes for this level ensure that the we match
 			# this path
-			if not self.match_include(sub_path, level):
+			if not self.match_pinclude(full_path, sub_path, level) and not self.match_include(sub_path, level):
+				# print('%s dir did not match include' % (sub_path), file=sys.stderr)
 				continue
 
 			# if there is a set of excludes for this level ensure that the we do not
 			# match this path
-			if self.match_exclude(sub_path, level):
+			if self.match_exclude(sub_path, level) or self.match_pexclude(full_path, sub_path, level):
+				# print('%s dir did match exclude' % (sub_path), file=sys.stderr)
 				continue
 
 			# set the tree decoration
@@ -329,13 +404,15 @@ class sysfstree(object):
 				# yield from self._tree(full_path, os.listdir(full_path), tmp_prefix, level + 1)
 
 
-def _main(paths, maxlevel=-1, include=[], exclude=[], bold=[], ordinary=False, nobold=False, sort=True):
-	# print("include: %s" % (include))
-	# print("exclude: %s" % (exclude))
-	# print("bold: %s" % (bold))
+def _main(paths, maxlevel=-1, pinclude=[], pexclude=[], include=[], exclude=[], bold=[], ordinary=False, nobold=False, sort=True):
+	print("include: %s" % (include), file=sys.stderr)
+	# print("exclude: %s" % (exclude), file=sys.stderr)
+	# print("bold: %s" % (bold), file=sys.stderr)
 	for p in paths:
-		sysfs = sysfstree(p, maxlevel=maxlevel, include=include, exclude=exclude, bold=bold, 
-				ordinary=ordinary, nobold=nobold, sort=sort)
+		sysfs = sysfstree(p, maxlevel=maxlevel, 
+				pinclude=pinclude, pexclude=pexclude, 
+				include=include, exclude=exclude, 
+				bold=bold, ordinary=ordinary, nobold=nobold, sort=sort)
 		try:
 			for l in sysfs._tree(p, os.listdir(p), "", -1):
 				print("%s" % (l), file=sys.stdout)
@@ -380,31 +457,37 @@ def main():
 	parser.add_argument("-P", "--path", nargs='*', help="include (shell pattern match)", default=[])
 	parser.add_argument("-I", "--include", nargs='*', help="include (shell pattern match)", default=[])
 	parser.add_argument("-E", "--exclude", nargs='*', help="exclude (shell pattern match)", default=[])
+	parser.add_argument("--pinclude", nargs='*', help="path include (shell pattern match)", default=[])
+	parser.add_argument("--pexclude", nargs='*', help="path exclude (shell pattern match)", default=[])
 
 	parser.add_argument("-B", "--bold", nargs='*', help="bold (shell pattern match)", default=[])
 	parser.add_argument("-N", "--nobold", nargs='*', help="bold (shell pattern match)", default=[])
 
-	parser.add_argument("--include_list", type=json.loads, help="json list version of include")
-	parser.add_argument("--exclude_list", type=json.loads, help="json list version of exclude")
+	parser.add_argument("--include_list", type=json.loads, help="json list version of include", default=[])
+	parser.add_argument("--exclude_list", type=json.loads, help="json list version of exclude", default=[])
 	parser.add_argument("--bold_list", type=json.loads, help="json list version of bold")
+
+	parser.add_argument("--usb-gadget", "--gadget", help="/sys/kernel/config/usb_gadget", action='store_true')
+	parser.add_argument("--usb-gadget-udc", "--gadget-udc", help="/sys/kernel/config/usb_gadget/*/udc", action='store_true')
+
 
 	parser.add_argument("-m", "--maxlevel", help="max level", type=int, default=-1)
 	parser.add_argument("paths", metavar='Path', type=str, nargs=argparse.REMAINDER, help="pathname", default=[])
 
 	args = parser.parse_args()
 
-	# print("args: %s" % (args), file=sys.stderr)
+	print("args: %s" % (args), file=sys.stderr)
 
 	if args.bold and args.bold_list:
-		print("--bold and --bold_list are mutually incompatible, use only one")
+		print("--bold and --bold_list are mutually incompatible, use only one", file=sys.stderr)
 		exit(1)
 
 	if args.include and args.include_list:
-		print("--include and --include_list are mutually incompatible, use only one")
+		print("--include and --include_list are mutually incompatible, use only one", file=sys.stderr)
 		exit(1)
 
 	if args.exclude and args.exclude_list:
-		print("--exclude and --exclude_list are mutually incompatible, use only one")
+		print("--exclude and --exclude_list are mutually incompatible, use only one", file=sys.stderr)
 		exit(1)
 
 	if args.bold:
@@ -419,9 +502,24 @@ def main():
 	if args.test:
 		_test(args)
 
+	if args.usb_gadget:
+		print("usb_gadget")
+		_main(["/sys/kernel/config/usb_gadget"], maxlevel=args.maxlevel)
+		return
+	
+	if args.usb_gadget_udc:
+		print("usb_gadget_udc")
+		_main(["/sys/kernel/config/usb_gadget/"], maxlevel=args.maxlevel,
+				include=[[], ["UDC"]],
+				bold=[[], ["UDC"]])
+		return
+
+
 	for path in args.path + args.paths:
-		_main([path], maxlevel=args.maxlevel, include=args.include_list, exclude=args.exclude_list, bold=args.bold_list,
-			ordinary=args.ordinary, nobold=args.nobold)
+		_main([path], maxlevel=args.maxlevel, 
+				include=args.include_list, exclude=args.exclude_list, 
+				pinclude=args.pinclude, pexclude=args.pexclude, 
+				bold=args.bold_list, ordinary=args.ordinary, nobold=args.nobold)
 
 
 if __name__ == "__main__":
