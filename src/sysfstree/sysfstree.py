@@ -46,7 +46,7 @@ from termcolor import colored
 
 class sysfstree(object):
 
-	def __init__(self, root, maxlevel, pinclude=[], pexclude=[], include=None, exclude=None, 
+	def __init__(self, root, maxlevel, pinclude=[], pexclude=[], include=None, exclude=None,
 			bold=None, ordinary=False, nobold=False, sort=True, followsyms=False):
 
 		self.maxlevel = maxlevel
@@ -59,8 +59,8 @@ class sysfstree(object):
 		self.root = root
 		self.sort = sort
 
-		self.pinclude = [ x.split('/') for x in pinclude]
-		self.pexclude = [ x.split('/') for x in pexclude]
+		self.pinclude = [x.split('/') for x in pinclude]
+		self.pexclude = [x.split('/') for x in pexclude]
 
 		if len(self.pinclude) > 0 and len(self.include):
 			print('sysfstree: pinclude and include mutually exclusive')
@@ -68,7 +68,7 @@ class sysfstree(object):
 		if len(self.pexclude) > 0 and len(self.exclude):
 			print('sysfstree: pexclude and exclude mutually exclusive')
 			exit(1)
-	    
+
 		# print("sysfstree: pinclude: %s" % (pinclude), file=sys.stderr)
 		# print("sysfstree: pinclude: %s" % (self.pinclude), file=sys.stderr)
 
@@ -138,7 +138,7 @@ class sysfstree(object):
 		if len(self.exclude) > 0:
 			return False
 
-		file = path[len(self.root)+1:]
+		# file = path[len(self.root)+1:]
 		if self.pexclude is None:
 			return False
 
@@ -160,7 +160,7 @@ class sysfstree(object):
 		if len(self.include) > 0:
 			return False
 
-		file = path[len(self.root)+1:]
+		# file = path[len(self.root)+1:]
 		if self.pinclude is None:
 			return True
 
@@ -174,7 +174,6 @@ class sysfstree(object):
 				pass
 		# print("match_pinclude: NO MATCH %s" % (name), file=sys.stderr)
 		return False
-
 
 	def _colored(self, text, color=None, attrs=None):
 		if self.nobold:
@@ -267,7 +266,6 @@ class sysfstree(object):
 			# print("bytes: %s" % (bytes), file=sys.stderr)
 			return bytes
 
-
 		# 65553 byte files are USB Descriptors
 		if fstat.st_size == 65553:
 			return self.pathdescriptors(path)
@@ -341,19 +339,19 @@ class sysfstree(object):
 			idc = "├──"
 			# special case for non-text data
 			if type(data) == bytes:
-				l = ''
+				line = ''
 				count = 0
 				total = 0
 				for d in data:
-					l += " %02x" % int(d)
+					line += " %02x" % int(d)
 					total += 1
 					count += 1
 					if count < 16 and total < len(data):
 						continue
 
-					yield ("%s%s%s:%s" % (prefix, idc, self._color(sub_path, level), l))
+					yield ("%s%s%s:%s" % (prefix, idc, self._color(sub_path, level), line))
 					count = 0
-					l = ''
+					line = ''
 					if not first:
 						continue
 					# blank sub_path and change idc
@@ -362,7 +360,7 @@ class sysfstree(object):
 					first = False
 				continue
 
-			# normal text data	
+			# normal text data
 			for d in data:
 				yield ("%s%s%s: %s" % (prefix, idc, self._color(sub_path, level), d.rstrip()))
 				if not first:
@@ -409,21 +407,21 @@ class sysfstree(object):
 
 				tmp_prefix = (prefix + "    ", prefix + "│   ")[len(file_list) > 1 and idx != len(file_list) - 1]
 				# paths = os.listdir(full_path)
-				paths = [ d.name for d in sorted(os.scandir(full_path), key=lambda dirent: dirent.inode())]
+				paths = [d.name for d in sorted(os.scandir(full_path), key=lambda dirent: dirent.inode())]
 				yield from self._tree(full_path, paths, tmp_prefix, level + 1)
 				# yield from self._tree(full_path, os.listdir(full_path), tmp_prefix, level + 1)
 
 
-def _main2(paths, maxlevel=-1, pinclude=[], pexclude=[], include=[], exclude=[], bold=[], 
+def _main2(paths, maxlevel=-1, pinclude=[], pexclude=[], include=[], exclude=[], bold=[],
 		ordinary=False, nobold=False, sort=True, followsyms=False):
 	print("paths: %s" % (paths), file=sys.stderr)
-	#print("include: %s" % (include), file=sys.stderr)
+	# print("include: %s" % (include), file=sys.stderr)
 	# print("exclude: %s" % (exclude), file=sys.stderr)
 	# print("bold: %s" % (bold), file=sys.stderr)
 	for p in paths:
-		sysfs = sysfstree(p, maxlevel=maxlevel, 
-				pinclude=pinclude, pexclude=pexclude, 
-				include=include, exclude=exclude, 
+		sysfs = sysfstree(p, maxlevel=maxlevel,
+				pinclude=pinclude, pexclude=pexclude,
+				include=include, exclude=exclude,
 				bold=bold, ordinary=ordinary, nobold=nobold, sort=sort, followsyms=followsyms)
 		try:
 			for l in sysfs._tree(p, os.listdir(p), "", -1):
@@ -431,11 +429,12 @@ def _main2(paths, maxlevel=-1, pinclude=[], pexclude=[], include=[], exclude=[],
 		except PermissionError:
 			print("[%s] [PermissionError]" % (p))
 
+
 def _test(args):
 	import doctest
 	doctest.testmod()
 
-	_main2(["/sys/kernel/config/usb_gadget"], bold=[[],['UDC']], sort=False)
+	_main2(["/sys/kernel/config/usb_gadget"], bold=[[], ['UDC']], sort=False)
 
 	# _ main(["/sys/devices/platform/soc"], include=["*.usb"])
 	# _main2(["/sys/devices/platform/soc"], maxlevel=args.maxlevel, include=[["*.usb"]], exclude=[[],
@@ -451,7 +450,6 @@ def _test(args):
 	# (sysname, nodename, release, version, machine) = os.uname()
 	# path = "/lib/modules/" + release + "/kernel/drivers/usb/gadget/function/"
 	# _main2([path], maxlevel=args.maxlevel, include=["usb_f_*"])
-
 
 
 # this is mainly for testing standalone
@@ -482,7 +480,6 @@ def main():
 	parser.add_argument("--udc", help="/sys/class/udc", action='store_true')
 	parser.add_argument("--usb-gadget", "--gadget", help="/sys/kernel/config/usb_gadget", action='store_true')
 	parser.add_argument("--usb-gadget-udc", "--gadget-udc", help="/sys/kernel/config/usb_gadget/*/udc", action='store_true')
-
 
 	parser.add_argument("-m", "--maxlevel", help="max level", type=int, default=-1)
 	parser.add_argument("paths", metavar='Path', type=str, nargs=argparse.REMAINDER, help="pathname", default=[])
@@ -518,7 +515,7 @@ def main():
 	if args.udc:
 		print("udc")
 		for s in os.listdir("/sys/class/udc"):
-			#print("udc: s: %s" % (s, ), file=sys.stderr)
+			# print("udc: s: %s" % (s, ), file=sys.stderr)
 			_main2([os.path.realpath("/sys/class/udc/%s" % (s))], maxlevel=args.maxlevel)
 		return
 
@@ -534,13 +531,12 @@ def main():
 				bold=[[], ["UDC"]])
 		return
 
-
 	for path in args.path + args.paths:
-		_main2([path], maxlevel=args.maxlevel, 
-				include=args.include_list, exclude=args.exclude_list, 
-				pinclude=args.pinclude, pexclude=args.pexclude, 
+		_main2([path], maxlevel=args.maxlevel,
+				include=args.include_list, exclude=args.exclude_list,
+				pinclude=args.pinclude, pexclude=args.pexclude,
 				bold=args.bold_list, ordinary=args.ordinary, nobold=args.nobold)
 
 
-#if __name__ == "__main__":
-#	main()
+if __name__ == "__main__":
+	main()

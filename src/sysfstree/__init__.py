@@ -24,16 +24,18 @@ try:
 except (ImportError):
 	from sysfstree import sysfstree
 
+
 def _main(paths, maxlevel=-1, pinclude=[], pexclude=[], include=[], exclude=[], bold=[], sort=True):
-        # print("_main: bold: %s" % (bold))
-        print("_main: pinclude: %s" % (pinclude))
-        for p in paths:
-                sysfs = sysfstree(p, maxlevel=maxlevel,
-                        pinclude=pinclude, pexclude=pexclude,
-                        include=include, exclude=exclude,
-                        bold=bold, sort=sort)
-                for l in sysfs._tree(p, os.listdir(p), "", -1):
-                        print("%s" % (l), file=sys.stdout)
+	# print("_main: bold: %s" % (bold))
+	print("_main: pinclude: %s" % (pinclude))
+	for p in paths:
+		sysfs = sysfstree(p, maxlevel=maxlevel,
+				pinclude=pinclude, pexclude=pexclude,
+			include=include, exclude=exclude,
+			bold=bold, sort=sort)
+		for l in sysfs._tree(p, os.listdir(p), "", -1):
+			print("%s" % (l), file=sys.stdout)
+
 
 def _test(args):
 	_main(["/sys/kernel/config/usb_gadget"])
@@ -99,7 +101,7 @@ def main():
 
 	if args.udc:
 		for s in os.listdir("/sys/class/udc"):
-			#print("udc: s: %s" % (s, ), file=sys.stderr)
+			# print("udc: s: %s" % (s, ), file=sys.stderr)
 			_main([os.path.realpath("/sys/class/udc/%s" % (s))], maxlevel=args.maxlevel)
 
 	if args.soc_udc_state:
@@ -113,13 +115,9 @@ def main():
 			include=[[], ["configs"]],)
 
 	if args.udc or args.soc_udc:
-		#_main(["/sys/devices/platform/soc"], maxlevel=args.maxlevel,
-		#		include=["*.usb", ["udc"]],
-		#		bold=[["*"], [], ["*"], ["state"]])
 		_main(["/sys/devices/platform/"], maxlevel=args.maxlevel,
 		pinclude=["ocp/*.usb/*/*.usb", "soc/*.usb/*/*.usb"],
 		bold=[["*"], [], ["*"], ["state"]])
-
 
 	if args.soc_gadget:
 		_main(["/sys/devices/platform/soc"], maxlevel=args.maxlevel, include=["*.usb", ["gadget"], args.include])
