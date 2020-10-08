@@ -69,10 +69,11 @@ class sysfstree(object):
 			print('sysfstree: pexclude and exclude mutually exclusive')
 			exit(1)
 
-		# print("sysfstree: pinclude: %s" % (pinclude), file=sys.stderr)
-		# print("sysfstree: pinclude: %s" % (self.pinclude), file=sys.stderr)
+		#print("sysfstree: pinclude: %s" % (pinclude), file=sys.stderr)
+		#print("sysfstree: pinclude: %s" % (self.pinclude), file=sys.stderr)
+		#print("sysfstree: pexclude: %s" % (self.pexclude), file=sys.stderr)
 
-		# print("sysfstree: maxlevel: %s include: %s exclude: %s bold: %s root: %s" %
+		#print("sysfstree: maxlevel: %s include: %s exclude: %s bold: %s root: %s" %
 		#       (self.maxlevel, self.include, self.exclude, self.bold, self.root), file=sys.stderr)
 
 	# match_exclude
@@ -136,18 +137,21 @@ class sysfstree(object):
 	def match_pexclude(self, path, name, level):
 
 		if len(self.exclude) > 0:
+			#print("match_pexclude: self.exclude")
 			return False
 
 		# file = path[len(self.root)+1:]
 		if self.pexclude is None:
+			#print("match_pexclude: no self.pexclude")
 			return False
 
-		for match in self.pinclude:
+		for match in self.pexclude:
+			print("match_pexclude: %s" % (match))
 			try:
-				# print("match_pinclude: %s:%s:%s" % (name, match, match[level]), file=sys.stderr)
+				print("match_pexclude: %s:%s:%s" % (name, match, match[level]), file=sys.stderr)
 				if fnmatch.fnmatch(name, match[level]):
-					# print("match_pinclude: MATCH %s %s" % (name, match), file=sys.stderr)
-					return False
+					#print("match_pexclude: MATCH %s %s" % (name, match), file=sys.stderr)
+					return True
 			except (IndexError):
 				pass
 		return False
@@ -166,9 +170,9 @@ class sysfstree(object):
 
 		for match in self.pinclude:
 			try:
-				# print("match_pinclude: %s:%s:%s" % (name, match, match[level]), file=sys.stderr)
+				#print("match_pinclude: %s:%s:%s" % (name, match, match[level]), file=sys.stderr)
 				if fnmatch.fnmatch(name, match[level]):
-					# print("match_pinclude: MATCH %s %s" % (name, match), file=sys.stderr)
+					#print("match_pinclude: MATCH %s %s" % (name, match), file=sys.stderr)
 					return True
 			except (IndexError):
 				pass
@@ -414,9 +418,9 @@ class sysfstree(object):
 
 def _main2(paths, maxlevel=-1, pinclude=[], pexclude=[], include=[], exclude=[], bold=[],
 		ordinary=False, nobold=False, sort=True, followsyms=False):
-	print("paths: %s" % (paths), file=sys.stderr)
-	# print("include: %s" % (include), file=sys.stderr)
-	# print("exclude: %s" % (exclude), file=sys.stderr)
+	#print("paths: %s" % (paths), file=sys.stderr)
+	#print("include: %s" % (include), file=sys.stderr)
+	#print("exclude: %s" % (exclude), file=sys.stderr)
 	# print("bold: %s" % (bold), file=sys.stderr)
 	for p in paths:
 		sysfs = sysfstree(p, maxlevel=maxlevel,

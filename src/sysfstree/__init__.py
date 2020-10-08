@@ -27,7 +27,11 @@ except (ImportError):
 
 def _main(paths, maxlevel=-1, pinclude=[], pexclude=[], include=[], exclude=[], bold=[], sort=True):
 	# print("_main: bold: %s" % (bold))
-	print("_main: pinclude: %s" % (pinclude))
+	#print("pinclude: %s" % (pinclude))
+	#print("pexclude: %s" % (pexclude))
+	#print("paths: %s" % (paths), file=sys.stderr)
+	#print("include: %s" % (include), file=sys.stderr)
+	#print("exclude: %s" % (exclude), file=sys.stderr)
 	for p in paths:
 		sysfs = sysfstree(p, maxlevel=maxlevel,
 				pinclude=pinclude, pexclude=pexclude,
@@ -86,7 +90,7 @@ def main():
 	parser.add_argument("paths", metavar='Path', type=str, nargs=argparse.REMAINDER, help="pathname", default=[])
 
 	args = parser.parse_args()
-	# print("args: %s" % (args), file=sys.stderr)
+	#print("args: %s" % (args), file=sys.stderr)
 
 	if args.test:
 		_test(args)
@@ -140,7 +144,7 @@ def main():
 	# - /sys/module/usbf_f*
 
 	for path in args.path + args.paths:
-		_main([path], maxlevel=args.maxlevel)
+		_main([path], maxlevel=args.maxlevel, pinclude=args.include, pexclude=args.exclude)
 
 
 if __name__ == "__main__":
