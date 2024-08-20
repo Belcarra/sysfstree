@@ -244,12 +244,13 @@ class sysfstree(object):
 
         try:
             fstat = os.stat(path)
-            # print("fstat: size:%s" % (fstat.st_size), file=sys.stderr)
+            #print("fstat: size:%s" % (fstat.st_size), file=sys.stderr)
         except (PermissionError):
             return ''
 
         # 4096 or 0 byte files should contain info
-        if self.ordinary or fstat.st_size == 4096 or fstat.st_size == 0:
+        #if self.ordinary or fstat.st_size == 4096 or fstat.st_size == 0:
+        if self.ordinary or fstat.st_size in [16384, 4096, 0]:
             try:
                 f = open(path, "r")
                 lines = f.readlines(1000)
@@ -258,7 +259,7 @@ class sysfstree(object):
             except (PermissionError, OSError):
                 return ''
             except UnicodeDecodeError:
-                # print('pathread: [UnicodeDecodeError]', file=sys.stderr)
+                print('pathread: [UnicodeDecodeError]', file=sys.stderr)
                 pass
             try:
                 f = open(path, "rb")
@@ -266,8 +267,8 @@ class sysfstree(object):
                 f.close
             except (PermissionError, OSError):
                 return ''
-            # print("bytes: %s" % (type(bytes)), file=sys.stderr)
-            # print("bytes: %s" % (bytes), file=sys.stderr)
+            #print("bytes: %s" % (type(bytes)), file=sys.stderr)
+            #print("bytes: %s" % (bytes), file=sys.stderr)
             return bytes
 
         # 65553 byte files are USB Descriptors
